@@ -1,34 +1,3 @@
-local ScreenGui = Instance.new("ScreenGui")
-local TextLabel = Instance.new("TextLabel")
-
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-TextLabel.Parent = ScreenGui
-TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-TextLabel.BackgroundTransparency = 1.000
-TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-TextLabel.BorderSizePixel = 0
-TextLabel.Size = UDim2.new(1, 0, 1, 0)
-TextLabel.Font = Enum.Font.SourceSans
-TextLabel.Text = "Test"
-TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextLabel.TextSize = 100.000
-
-local function KYLDZQY_fake_script() -- ScreenGui.LocalScript 
-	local script = Instance.new('LocalScript', ScreenGui)
-
-	script.Parent.TextLabel.Text = "Loading script Biezel.z Hub"
-	wait(3)
-	script.Parent.TextLabel.Text = "Loading lincense !!!"
-	wait(3)
-	script.Parent.TextLabel.Text = "Loaded Script"
-	wait(3)
-	script.Parent.TextLabel.Text = ""
-	
-end
-coroutine.wrap(KYLDZQY_fake_script)()
-wait(9)
 setfpscap(360)
 local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kataporn/Kataporn/refs/heads/main/biezel.z.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
@@ -36,7 +5,7 @@ local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.
 local Window = Fluent:CreateWindow({
     Title = "Biezel.z" .. Fluent.Version,
     SubTitle = "by my self ",
-    TabWidth = 160,
+    TabWidth = 120,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true, 
     Theme = "AMOLED",
@@ -44,7 +13,7 @@ local Window = Fluent:CreateWindow({
 })
 
 local Tabs = {
-    Main = Window:AddTab({ Title = "Start Farm", Icon = "" }),
+    Main = Window:AddTab({ Title = "Start Farm", Icon = "House" }),
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
@@ -63,6 +32,20 @@ do
         Content = ""
     })
 
+    local function updateWalkSpeed(player, value)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = math.clamp(value, 0, 200)
+            print(string.format("%s's ความเร็วในการเดินเปลี่ยนเป็น: %d", player.Name, value))
+        end
+    end
+
+    local function updateJumpPower(player, value)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = math.clamp(value, 0, 200)
+            print(string.format("%s's Jump Power เปลี่ยนเป็น: %d", player.Name, value))
+        end
+    end
+
     local WalkSpeedToggle = Tabs.Main:AddToggle("WalkSpeedToggle", {
         Title = "เปิด/ปิด ความเร็วในการเดิน",
         Default = false,
@@ -79,10 +62,7 @@ do
         Callback = function(Value)
             if WalkSpeedToggle.Value then
                 for _, player in pairs(game.Players:GetPlayers()) do
-                    if player.Character and player.Character:FindFirstChild("Humanoid") then
-                        player.Character.Humanoid.WalkSpeed = math.clamp(Value, 0, 200) -- Ensure value is within bounds
-                        print(string.format("%s's ความเร็วในการเดินเปลี่ยนเป็น: %d", player.Name, Value))
-                    end
+                    updateWalkSpeed(player, Value)
                 end
             end
         end
@@ -92,10 +72,7 @@ do
         print(string.format("ความเร็วในการเดินสไลเดอร์เปลี่ยนเป็น: %d", Value))
         if WalkSpeedToggle.Value then
             for _, player in pairs(game.Players:GetPlayers()) do
-                if player.Character and player.Character:FindFirstChild("Humanoid") then
-                    player.Character.Humanoid.WalkSpeed = math.clamp(Value, 0, 200) -- Ensure value is within bounds
-                    print(string.format("%s's ความเร็วในการเดินอัปเดตเป็น: %d", player.Name, Value))
-                end
+                updateWalkSpeed(player, Value)
             end
         end
     end)
@@ -105,15 +82,10 @@ do
     WalkSpeedToggle:OnChanged(function()
         local defaultWalkSpeed = 16
         for _, player in pairs(game.Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("Humanoid") then
-                if not WalkSpeedToggle.Value then
-                    player.Character.Humanoid.WalkSpeed = defaultWalkSpeed
-                    print(string.format("%s's ความเร็วในการเดินรีเซ็ตเป็นค่าเริ่มต้น: %d", player.Name, defaultWalkSpeed))
-                else
-                    local currentSliderValue = WalkSpeedSlider.Value
-                    player.Character.Humanoid.WalkSpeed = math.clamp(currentSliderValue, 0, 200) -- Ensure value is within bounds
-                    print(string.format("%s's ความเร็วในการเดินตั้งเป็นค่าจากสไลเดอร์: %d", player.Name, currentSliderValue))
-                end
+            if not WalkSpeedToggle.Value then
+                updateWalkSpeed(player, defaultWalkSpeed)
+            else
+                updateWalkSpeed(player, WalkSpeedSlider.Value)
             end
         end
         print(string.format("การเปลี่ยนแปลงการเปิด/ปิดความเร็วในการเดิน: %s", tostring(WalkSpeedToggle.Value)))
@@ -137,10 +109,7 @@ do
         Callback = function(Value)
             if JumpPowerToggle.Value then
                 for _, player in pairs(game.Players:GetPlayers()) do
-                    if player.Character and player.Character:FindFirstChild("Humanoid") then
-                        player.Character.Humanoid.JumpPower = math.clamp(Value, 0, 200) -- Ensure value is within bounds
-                        print(string.format("%s's Jump Power เปลี่ยนเป็น: %d", player.Name, Value))
-                    end
+                    updateJumpPower(player, Value)
                 end
             end
         end
@@ -150,10 +119,7 @@ do
         print(string.format("Jump Power สไลเดอร์เปลี่ยนเป็น: %d", Value))
         if JumpPowerToggle.Value then
             for _, player in pairs(game.Players:GetPlayers()) do
-                if player.Character and player.Character:FindFirstChild("Humanoid") then
-                    player.Character.Humanoid.JumpPower = math.clamp(Value, 0, 200) -- Ensure value is within bounds
-                    print(string.format("%s's Jump Power อัปเดตเป็น: %d", player.Name, Value))
-                end
+                updateJumpPower(player, Value)
             end
         end
     end)
@@ -163,20 +129,15 @@ do
     JumpPowerToggle:OnChanged(function()
         local defaultJumpPower = 50
         for _, player in pairs(game.Players:GetPlayers()) do
-            if player.Character and player.Character:FindFirstChild("Humanoid") then
-                if not JumpPowerToggle.Value then
-                    player.Character.Humanoid.JumpPower = defaultJumpPower
-                    print(string.format("%s's Jump Power รีเซ็ตเป็นค่าเริ่มต้น: %d", player.Name, defaultJumpPower))
-                else
-                    local currentSliderValue = JumpPowerSlider.Value
-                    player.Character.Humanoid.JumpPower = math.clamp(currentSliderValue, 0, 200) -- Ensure value is within bounds
-                    print(string.format("%s's Jump Power ตั้งเป็นค่าจากสไลเดอร์: %d", player.Name, currentSliderValue))
-                end
+            if not JumpPowerToggle.Value then
+                updateJumpPower(player, defaultJumpPower)
+            else
+                updateJumpPower(player, JumpPowerSlider.Value)
             end
         end
         print(string.format("การเปลี่ยนแปลงการเปิด/ปิด Jump Power: %s", tostring(JumpPowerToggle.Value)))
     end)
-    
+end
     InterfaceManager:SetLibrary(Fluent)
     InterfaceManager:SetFolder("FluentScriptHub")
     InterfaceManager:BuildInterfaceSection(Tabs.Settings)
@@ -184,9 +145,8 @@ do
 
     Fluent:Notify({
         Title = "Script Loaded",
-        Content = "Auto Farm Ready!",
+        Content = "Universary  Ready!",
         Duration = 2
     })
 
     SaveManager:LoadAutoloadConfig()
-end
