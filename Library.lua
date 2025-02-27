@@ -1,15 +1,97 @@
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
-local ScreenGui = game:GetObjects("rbxassetid://99852798675591")[1]
-ScreenGui.Enabled = false
+-- Create modern UI elements
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ModernUI"
+ScreenGui.ResetOnSpawn = false
 
 if RunService:IsStudio() then
-	ScreenGui.Parent = game.StarterGui
+    ScreenGui.Parent = game.StarterGui
 else
-	ScreenGui.Parent = cloneref(game.CoreGui)
+    ScreenGui.Parent = game.CoreGui
 end
 
+-- Main frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 800, 0, 500)
+MainFrame.Position = UDim2.new(0.5, -400, 0.5, -250)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- Add rounded corners
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Sidebar
+local Sidebar = Instance.new("Frame")
+Sidebar.Name = "Sidebar"
+Sidebar.Size = UDim2.new(0, 200, 1, 0)
+Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 10)
+SidebarCorner.Parent = Sidebar
+
+-- Content area
+local ContentArea = Instance.new("Frame")
+ContentArea.Name = "ContentArea"
+ContentArea.Size = UDim2.new(1, -200, 1, 0)
+ContentArea.Position = UDim2.new(0, 200, 0, 0)
+ContentArea.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+ContentArea.BorderSizePixel = 0
+ContentArea.Parent = MainFrame
+
+local ContentCorner = Instance.new("UICorner")
+ContentCorner.CornerRadius = UDim.new(0, 10)
+ContentCorner.Parent = ContentArea
+
+-- Make UI draggable
+local isDragging = false
+local dragStart = nil
+local startPos = nil
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and isDragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+-- Create smooth slider
+local function createSlider(name, min, max, default)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Name = name.."Slider"
+    SliderFrame.Size = UDim2.new(0, 300, 0, 50)
+    SliderFrame.BackgroundTransparency = 1
+    SliderFrame.Parent = ContentArea
+    
+    local SliderTitle = Instance.new("TextLabel")
 local Library = {
 	sizeX = 800,
 	sizeY = 600,
@@ -1575,6 +1657,7 @@ function Library:createManager(options: table)
 	local Page = UI:createSubTab({text = "Page 1"})
 	local UI = Page:createSection({text = "UI"})
 	local SaveManager = Page:createSection({position = "Right", text = "Save Manager"})
+	local ThemeManager = Page:createSection({position = "Right", text = "Theme Manager"})
 	
 	-- Create color pickers to change UI color
 	UI:createPicker({
@@ -1704,6 +1787,7 @@ function Library:createManager(options: table)
     		loadSaveConfig(Configs:getValue())
 		end
 	})
+
 	-- Auto load
 	SaveManager:createButton({
 		text = "Set as Auto Load", 
@@ -1711,6 +1795,51 @@ function Library:createManager(options: table)
 			writefile(options.folderName .. "/autoload.txt", Configs:getValue())
 		end
 	})
+
+	if isfile(options.folderName .. "/autoload.txt") then
+		loadConfig(readfile(options.folderName .. "/autoload.txt"))
+	end
+
+	local themeConfigName = ThemeManager:createTextBox({text = "Theme Config Name"})
+
+	ThemeManager:createButton({
+		text = "Create Theme Config", 
+		callback = function()
+			local ThemeData = getThemeData()
+			local encoded = game:GetService("HttpService"):JSONEncode(ThemeData)
+			writefile(options.folderName .. "/" .. "Theme/" .. themeConfigName:getText() .. ".json", encoded)
+
+			if shared.Flags.Dropdown["Theme Configs"] then
+				shared.Flags.Dropdown["Theme Configs"]:updateList({list = getThemeJsons(), default = {shared.Flags.Dropdown["Theme Configs"]:getValue()}})
+			end
+		end
+	})
+
+	local ThemeConfigs = ThemeManager:createDropdown({
+		text = "Theme Configs", 
+		list = getThemeJsons(),
+	})
+
+	ThemeManager:createButton({
+		text = "Save Theme Config", 
+		callback = function()
+			local ThemeData = getThemeData()
+			local encoded = game:GetService("HttpService"):JSONEncode(ThemeData)
+			writefile(options.folderName .. "/" .. "Theme/" .. ThemeConfigs:getValue() .. ".json", encoded)
+			ThemeConfigs:updateList({list = getThemeJsons(), default = {ThemeConfigs:getValue()}})
+		end
+	})
+
+	ThemeManager:createButton({
+		text = "Load Theme Config", 
+		callback = function()
+			loadThemeConfig(ThemeConfigs:getValue())
+		end
+	})
+
+	self.managerCreated = true
+end
+
 -- Set users theme choice or default theme when initiliazed, could make this cleaner lol, but nah.
 Theme:registerToObjects({
 	{object = Glow, property = "ImageColor3", theme = {"PrimaryBackgroundColor"}},
